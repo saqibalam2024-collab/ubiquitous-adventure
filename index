@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Saqib</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    #main-view h1 {
+      font-size: 4rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      user-select: none;
+    }
+
+    /* Hidden Admin Panel */
+    #admin-panel {
+      display: none;
+      width: 90%;
+      max-width: 600px;
+      background-color: #111111;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 24px;
+      max-height: 80vh;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #222222;
+      padding-bottom: 12px;
+    }
+
+    .admin-header h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+    }
+
+    .stats-box {
+      background-color: #1a1a1a;
+      padding: 12px 16px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.95rem;
+    }
+
+    .log-container {
+      overflow-y: auto;
+      max-height: 300px;
+      border: 1px solid #222222;
+      border-radius: 6px;
+      padding: 12px;
+      background-color: #0a0a0a;
+    }
+
+    .log-list {
+      list-style: none;
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #cccccc;
+    }
+
+    .log-list li {
+      padding: 6px 0;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .log-list li:last-child {
+      border-bottom: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    button {
+      background-color: #222222;
+      color: #ffffff;
+      border: 1px solid #444444;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    button:hover {
+      background-color: #333333;
+    }
+
+    button.danger {
+      border-color: #662222;
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Public View -->
+  <div id="main-view">
+    <h1>Saqib</h1>
+  </div>
+
+  <!-- Secret Admin Panel -->
+  <div id="admin-panel">
+    <div class="admin-header">
+      <h2>Admin Panel — Visitor Logs</h2>
+      <button id="close-btn">Close (Esc)</button>
+    </div>
+
+    <div class="stats-box">
+      <span>Global Total Visits: <strong id="global-count">Loading...</strong></span>
+      <span>Your Browser Visits: <strong id="local-count">0</strong></span>
+    </div>
+
+    <div class="log-container">
+      <ul class="log-list" id="log-list"></ul>
+    </div>
+
+    <div class="btn-group">
+      <button class="danger" id="clear-btn">Clear Local Logs</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "saqib_site_visit_logs";
+    // Change "saqib-unique-site-2026" to any unique string for your own counter
+    const COUNTER_API_URL = "https://counterapi.dev";
+
+    const mainView = document.getElementById("main-view");
+    const adminPanel = document.getElementById("admin-panel");
+    const logList = document.getElementById("log-list");
+    const localCountEl = document.getElementById("local-count");
+    const globalCountEl = document.getElementById("global-count");
+    const closeBtn = document.getElementById("close-btn");
+    const clearBtn = document.getElementById("clear-btn");
+
+    // 1. Record current visit timestamp in browser storage
+    function recordVisit() {
+      const now = new Date();
+      const timestamp = now.toLocaleString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        timeZoneName: "short"
+      });
+
+      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      logs.unshift({
+        time: timestamp,
+        device: navigator.platform || "Unknown Device"
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+
+      // Ping global counter API for total cross-device visits
+      fetch(COUNTER_API_URL)
+        .then(res => res.json())
+        .then(data => {
+          globalCountEl.textContent = data.count || "Unavailable";
+        })
+        .catch(() => {
+          globalCountEl.textContent = "Offline / Blocked";
+        });
+    }
+
+    // 2. Render logs inside the admin panel
+    function renderLogs() {
+      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+      localCountEl.textContent = logs.length;
+      logList.innerHTML = "";
+
+      if (logs.length === 0) {
+        logList.innerHTML = "<li>No local visits recorded yet.</li>";
+        return;
+      }
+
+      logs.forEach((entry, index) => {
+        const li = document.createElement("li");
+        li.textContent = `#${logs.length - index} — ${entry.time} (${entry.device})`;
+        logList.appendChild(li);
+      });
+    }
+
+    // 3. Toggle Admin Panel visibility
+    function toggleAdmin(show) {
+      if (show) {
+        renderLogs();
+        mainView.style.display = "none";
+        adminPanel.style.display = "flex";
+      } else {
+        adminPanel.style.display = "none";
+        mainView.style.display = "flex";
+      }
+    }
+
+    // 4. Detect pressing Shift 2 times quickly (within 500ms)
+    let lastShiftTime = 0;
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Shift") {
+        const currentTime = Date.now();
+        if (currentTime - lastShiftTime < 500) {
+          const isHidden = adminPanel.style.display !== "flex";
+          toggleAdmin(isHidden);
+          lastShiftTime = 0; // Reset
+        } else {
+          lastShiftTime = currentTime;
+        }
+      } else if (e.key === "Escape" && adminPanel.style.display === "flex") {
+        toggleAdmin(false);
+      }
+    });
+
+    closeBtn.addEventListener("click", () => toggleAdmin(false));
+
+    clearBtn.addEventListener("click", () => {
+      localStorage.removeItem(STORAGE_KEY);
+      renderLogs();
+    });
+
+    // Run on page load
+    recordVisit();
+  </script>
+</body>
+</html>
