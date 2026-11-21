@@ -3,247 +3,180 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#000000" />
   <title>Saqib</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; }
 
     body {
-      background-color: #000000;
-      color: #ffffff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      background: #000;
+      color: #fff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
-    #main-view h1 {
-      font-size: 4rem;
+    #home h1 {
+      margin: 0;
+      font-size: clamp(3rem, 12vw, 6rem);
       font-weight: 600;
-      letter-spacing: 0.05em;
-      user-select: none;
+      letter-spacing: 0.04em;
     }
 
-    /* Hidden Admin Panel */
-    #admin-panel {
+    #admin {
       display: none;
-      width: 90%;
-      max-width: 600px;
-      background-color: #111111;
-      border: 1px solid #333333;
-      border-radius: 8px;
-      padding: 24px;
-      max-height: 80vh;
-      flex-direction: column;
-      gap: 16px;
+      width: min(92vw, 640px);
+      max-height: 85vh;
+      overflow: auto;
+      padding: 1.5rem;
+      border: 1px solid #333;
+      border-radius: 12px;
+      background: #101010;
     }
 
-    .admin-header {
+    .admin-header, .visit-count, .actions {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #222222;
-      padding-bottom: 12px;
-    }
-
-    .admin-header h2 {
-      font-size: 1.25rem;
-      font-weight: 500;
-    }
-
-    .stats-box {
-      background-color: #1a1a1a;
-      padding: 12px 16px;
-      border-radius: 6px;
-      display: flex;
       justify-content: space-between;
-      font-size: 0.95rem;
+      gap: 1rem;
     }
 
-    .log-container {
-      overflow-y: auto;
-      max-height: 300px;
-      border: 1px solid #222222;
-      border-radius: 6px;
-      padding: 12px;
-      background-color: #0a0a0a;
-    }
+    .admin-header { border-bottom: 1px solid #292929; padding-bottom: 1rem; }
+    .admin-header h2 { margin: 0; font-size: 1.2rem; }
+    .visit-count { margin: 1rem 0; padding: 0.9rem 1rem; border-radius: 8px; background: #1b1b1b; }
 
-    .log-list {
+    #visits {
+      margin: 0;
+      padding: 0.75rem 1rem;
       list-style: none;
-      font-family: monospace;
-      font-size: 0.85rem;
-      color: #cccccc;
+      border: 1px solid #292929;
+      border-radius: 8px;
+      background: #080808;
+      color: #ddd;
+      font: 0.9rem/1.6 ui-monospace, SFMono-Regular, Menlo, monospace;
     }
 
-    .log-list li {
-      padding: 6px 0;
-      border-bottom: 1px solid #1a1a1a;
-    }
-
-    .log-list li:last-child {
-      border-bottom: none;
-    }
-
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
+    #visits li + li { border-top: 1px solid #222; }
+    #visits li { padding: 0.5rem 0; overflow-wrap: anywhere; }
+    .actions { justify-content: flex-end; margin-top: 1rem; }
 
     button {
-      background-color: #222222;
-      color: #ffffff;
-      border: 1px solid #444444;
-      padding: 8px 14px;
-      border-radius: 4px;
+      padding: 0.55rem 0.85rem;
+      border: 1px solid #444;
+      border-radius: 6px;
+      background: #222;
+      color: #fff;
+      font: inherit;
       cursor: pointer;
-      font-size: 0.85rem;
     }
 
-    button:hover {
-      background-color: #333333;
-    }
+    button:hover { background: #333; }
+    button:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+    .hint { position: fixed; bottom: 1rem; color: #777; font-size: 0.8rem; }
 
-    button.danger {
-      border-color: #662222;
-      color: #ff6b6b;
+    @media (max-width: 420px) {
+      #admin { padding: 1rem; }
+      .admin-header, .visit-count { align-items: flex-start; }
     }
   </style>
 </head>
 <body>
-
-  <!-- Public View -->
-  <div id="main-view">
+  <main id="home" aria-label="Home">
     <h1>Saqib</h1>
-  </div>
+  </main>
 
-  <!-- Secret Admin Panel -->
-  <div id="admin-panel">
-    <div class="admin-header">
-      <h2>Admin Panel — Visitor Logs</h2>
-      <button id="close-btn">Close (Esc)</button>
+  <section id="admin" aria-labelledby="admin-title" aria-hidden="true">
+    <header class="admin-header">
+      <h2 id="admin-title">Visit history</h2>
+      <button id="close-button" type="button">Close (Esc)</button>
+    </header>
+    <p class="visit-count">Visits recorded in this browser: <strong id="visit-count">0</strong></p>
+    <ul id="visits" aria-live="polite"></ul>
+    <div class="actions">
+      <button id="clear-button" type="button">Clear this browser's history</button>
     </div>
+  </section>
 
-    <div class="stats-box">
-      <span>Global Total Visits: <strong id="global-count">Loading...</strong></span>
-      <span>Your Browser Visits: <strong id="local-count">0</strong></span>
-    </div>
-
-    <div class="log-container">
-      <ul class="log-list" id="log-list"></ul>
-    </div>
-
-    <div class="btn-group">
-      <button class="danger" id="clear-btn">Clear Local Logs</button>
-    </div>
-  </div>
+  <p class="hint" id="shortcut-hint">Press Shift twice to open visit history</p>
 
   <script>
-    const STORAGE_KEY = "saqib_site_visit_logs";
-    // Change "saqib-unique-site-2026" to any unique string for your own counter
-    const COUNTER_API_URL = "https://counterapi.dev";
+    // This is a local demo: records are stored only in this browser and device.
+    const STORAGE_KEY = "saqib_visit_history_v1";
+    const home = document.getElementById("home");
+    const admin = document.getElementById("admin");
+    const visitList = document.getElementById("visits");
+    const visitCount = document.getElementById("visit-count");
+    const shortcutHint = document.getElementById("shortcut-hint");
 
-    const mainView = document.getElementById("main-view");
-    const adminPanel = document.getElementById("admin-panel");
-    const logList = document.getElementById("log-list");
-    const localCountEl = document.getElementById("local-count");
-    const globalCountEl = document.getElementById("global-count");
-    const closeBtn = document.getElementById("close-btn");
-    const clearBtn = document.getElementById("clear-btn");
-
-    // 1. Record current visit timestamp in browser storage
-    function recordVisit() {
-      const now = new Date();
-      const timestamp = now.toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        timeZoneName: "short"
-      });
-
-      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      logs.unshift({
-        time: timestamp,
-        device: navigator.platform || "Unknown Device"
-      });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-
-      // Ping global counter API for total cross-device visits
-      fetch(COUNTER_API_URL)
-        .then(res => res.json())
-        .then(data => {
-          globalCountEl.textContent = data.count || "Unavailable";
-        })
-        .catch(() => {
-          globalCountEl.textContent = "Offline / Blocked";
-        });
+    function readVisits() {
+      try {
+        const value = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+        return Array.isArray(value) ? value : [];
+      } catch {
+        return [];
+      }
     }
 
-    // 2. Render logs inside the admin panel
-    function renderLogs() {
-      const logs = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      localCountEl.textContent = logs.length;
-      logList.innerHTML = "";
+    function renderVisits() {
+      const visits = readVisits();
+      visitCount.textContent = String(visits.length);
+      visitList.replaceChildren();
 
-      if (logs.length === 0) {
-        logList.innerHTML = "<li>No local visits recorded yet.</li>";
+      if (visits.length === 0) {
+        const item = document.createElement("li");
+        item.textContent = "No visits recorded in this browser yet.";
+        visitList.append(item);
         return;
       }
 
-      logs.forEach((entry, index) => {
-        const li = document.createElement("li");
-        li.textContent = `#${logs.length - index} — ${entry.time} (${entry.device})`;
-        logList.appendChild(li);
-      });
-    }
-
-    // 3. Toggle Admin Panel visibility
-    function toggleAdmin(show) {
-      if (show) {
-        renderLogs();
-        mainView.style.display = "none";
-        adminPanel.style.display = "flex";
-      } else {
-        adminPanel.style.display = "none";
-        mainView.style.display = "flex";
+      for (const visit of visits) {
+        const item = document.createElement("li");
+        item.textContent = new Date(visit).toLocaleString();
+        visitList.append(item);
       }
     }
 
-    // 4. Detect pressing Shift 2 times quickly (within 500ms)
+    function setAdminVisible(visible) {
+      home.style.display = visible ? "none" : "block";
+      admin.style.display = visible ? "block" : "none";
+      admin.setAttribute("aria-hidden", String(!visible));
+      shortcutHint.hidden = visible;
+      if (visible) renderVisits();
+    }
+
+    // Record a page visit in this browser's local storage.
+    const visits = readVisits();
+    visits.unshift(new Date().toISOString());
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(visits.slice(0, 100)));
+    } catch {
+      // Storage may be disabled or full; the page still works without it.
+    }
+
     let lastShiftTime = 0;
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Shift") {
-        const currentTime = Date.now();
-        if (currentTime - lastShiftTime < 500) {
-          const isHidden = adminPanel.style.display !== "flex";
-          toggleAdmin(isHidden);
-          lastShiftTime = 0; // Reset
-        } else {
-          lastShiftTime = currentTime;
-        }
-      } else if (e.key === "Escape" && adminPanel.style.display === "flex") {
-        toggleAdmin(false);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && admin.style.display === "block") {
+        setAdminVisible(false);
+        return;
+      }
+
+      if (event.key !== "Shift" || event.repeat) return;
+      const now = Date.now();
+      if (now - lastShiftTime <= 600) {
+        setAdminVisible(admin.style.display !== "block");
+        lastShiftTime = 0;
+      } else {
+        lastShiftTime = now;
       }
     });
 
-    closeBtn.addEventListener("click", () => toggleAdmin(false));
-
-    clearBtn.addEventListener("click", () => {
+    document.getElementById("close-button").addEventListener("click", () => setAdminVisible(false));
+    document.getElementById("clear-button").addEventListener("click", () => {
       localStorage.removeItem(STORAGE_KEY);
-      renderLogs();
+      renderVisits();
     });
-
-    // Run on page load
-    recordVisit();
   </script>
 </body>
 </html>
